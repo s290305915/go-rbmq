@@ -10,11 +10,11 @@ import (
 
 type (
 	Conf struct {
-		Addr  string
-		Port  string
-		User  string
-		Pwd   string
-		Vhost string
+		Addr  string `json:"addr" yaml:"addr"`
+		Port  string `json:"port" yaml:"port"`
+		User  string `json:"user" yaml:"user"`
+		Pwd   string `json:"pwd" yaml:"pwd"`
+		Vhost string `json:"vhost" yaml:"vhost"`
 	}
 )
 
