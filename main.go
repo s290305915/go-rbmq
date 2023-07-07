@@ -1,4 +1,4 @@
-package main
+package test
 
 import (
 	"log"
@@ -12,7 +12,7 @@ import (
 	"go-rbmq/test_producer"
 )
 
-func main() {
+func test() {
 
 	mqConf := rbmq.Conf{
 		Addr:  "-",

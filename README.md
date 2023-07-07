@@ -17,12 +17,6 @@ rabbit-mq 快速接入程序，本项目参考自[shixiaofeia/fly](https://githu
 go get github.com/s290305915/go-rbmq
 ```
 
-### 命令行启动
-
-```
-go run main.go
-```
-
 
 ## 项目结构
 
