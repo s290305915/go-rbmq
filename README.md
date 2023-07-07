@@ -27,11 +27,9 @@ go get github.com/s290305915/go-rbmq
 |  ├── instance_config  // 接入各类参数
 |  ├── instance         // 实例化
 |  └── rabbitmq         // 基础设施
-├── test_consumer       // 消费者示例
-|  ├── consumer         // 消费者实例代码（可直接复制使用，根据业务修改参数即可）
-├── test_producer       // 生产者示例
-|  ├── producer         // 消费者实例代码（可直接复制使用，根据业务修改参数即可）
-├── main.go             // 启动文件（实际使用可参考此启动方式进行调用）    
+├── test                // 消费者示例
+|  ├── test_consumer    // 消费者实例代码（可直接复制使用，根据业务修改参数即可）
+|  ├── test_producer    // 消费者实例代码（可直接复制使用，根据业务修改参数即可）
 ├── go.mod              // 包管理    
 ├── go.sum              // 包管理    
 ├── README.md

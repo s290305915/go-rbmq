@@ -1,17 +1,17 @@
-package test_producer
+package test
 
 import (
 	"log"
 	"time"
 
-	"go-rbmq/rbmq"
+	"github.com/s290305915/go-rbmq/rbmq"
 )
 
 type OrderRbmqPorducer struct {
 	*rbmq.RbmqInstance
 }
 
-func Load(mqConf rbmq.Conf) *OrderRbmqPorducer {
+func LoadProducer(mqConf rbmq.Conf) *OrderRbmqPorducer {
 
 	// 生产者注册RabbitMQ
 	orderProducerConfig := new(rbmq.ConsumerConfig)
