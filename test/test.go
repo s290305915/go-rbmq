@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/s290305915/go-rbmq/rbmq"
-	"github.com/s290305915/go-rbmq/test_consumer"
-	"github.com/s290305915/go-rbmq/test_producer"
 )
 
 func test() {
@@ -24,10 +22,10 @@ func test() {
 
 	time.Sleep(3 * time.Second)
 
-	orderConsu := test_consumer.Load(mqConf)
+	orderConsu := LoadConsumer(mqConf)
 	orderConsu.Consume()
 
-	orderProdc := test_producer.Load(mqConf)
+	orderProdc := LoadProducer(mqConf)
 
 	go func() {
 		for {

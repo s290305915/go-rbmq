@@ -1,18 +1,18 @@
-package test_consumer
+package test
 
 import (
 	"context"
 	"fmt"
 	"log"
 
-	"go-rbmq/rbmq"
+	"github.com/s290305915/go-rbmq/rbmq"
 )
 
 type OrderRbmqConsumer struct {
 	*rbmq.RbmqInstance
 }
 
-func Load(mqConf rbmq.Conf) *OrderRbmqConsumer {
+func LoadConsumer(mqConf rbmq.Conf) *OrderRbmqConsumer {
 
 	// 消费者注册RabbitMQ
 	orderConsumerConfig := new(rbmq.ConsumerConfig)
