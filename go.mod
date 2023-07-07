@@ -1,4 +1,4 @@
-module go-rbmq
+module github.com/s290305915/go-rbmq
 
 go 1.18
 

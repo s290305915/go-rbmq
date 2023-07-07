@@ -7,9 +7,9 @@ import (
 	"syscall"
 	"time"
 
-	"go-rbmq/rbmq"
-	"go-rbmq/test_consumer"
-	"go-rbmq/test_producer"
+	"github.com/s290305915/go-rbmq/rbmq"
+	"github.com/s290305915/go-rbmq/test_consumer"
+	"github.com/s290305915/go-rbmq/test_producer"
 )
 
 func test() {
