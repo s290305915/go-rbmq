@@ -11,10 +11,26 @@
 
 rabbit-mq 快速接入程序，本项目参考自[shixiaofeia/fly](https://github.com/shixiaofeia/fly)项目所作二次开发，主要目的在于快速接入rabbit-mq推送和消费程序，引入即可使用，无需花时间在基础组件
 
-## 快速接入
+## 快速使用
 
 ```
 go get github.com/s290305915/go-rbmq
+```
+
+设置配置文件：
+```json
+{
+    "addr": "127.0.0.1",
+    "port": "5672",
+    "user": "admin",
+    "pwd": "123",
+    "vhost": "/",
+    "pool_idle":{
+        "max_size": 200,
+        "min_idle": 50,
+        "max_idle": 2000
+    }
+}
 ```
 
 
@@ -38,5 +54,9 @@ go get github.com/s290305915/go-rbmq
 ## 项目引用
 
 ### amqp091-go
+### go-commons-pool 用于实现连接池处理
+
+## 2023年12月1日 更新
+增加go-commons-pool连接池配置
 
 [amqp091-go](github.com/rabbitmq/amqp091-go)

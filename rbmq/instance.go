@@ -1,6 +1,7 @@
 package rbmq
 
 import (
+	"context"
 	"log"
 )
 
@@ -9,10 +10,17 @@ type RbmqInstance struct {
 	MqChan *Channel
 }
 
-func (c *ConsumerConfig) NewInstance(conf Conf) *RbmqInstance {
+func (c *ConsumerConfig) NewInstance() *RbmqInstance {
 	// 方法实现
 
-	ch, err := Init(conf)
+	//fmt.Printf("ChannelPool：%+v", ChannelPool)
+
+	obj, err := ChannelPool.BorrowObject(context.TODO())
+	if err != nil {
+		return nil
+	}
+	ch := obj.(*Channel)
+
 	if err != nil {
 		log.Fatal("init rabbit mq err: " + err.Error())
 	}

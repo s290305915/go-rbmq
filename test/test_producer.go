@@ -11,7 +11,7 @@ type OrderRbmqPorducer struct {
 	*rbmq.RbmqInstance
 }
 
-func LoadProducer(mqConf rbmq.Conf) *OrderRbmqPorducer {
+func LoadProducer() *OrderRbmqPorducer {
 
 	// 生产者注册RabbitMQ
 	orderProducerConfig := new(rbmq.ConsumerConfig)
@@ -19,7 +19,7 @@ func LoadProducer(mqConf rbmq.Conf) *OrderRbmqPorducer {
 	orderProducerConfig.QueueName = "queue1"
 	orderProducerConfig.KeyName = "key_producer"
 	orderProducerConfig.ExchangeType = rbmq.DIRECT_EXCHANGE
-	orderProducer := orderProducerConfig.NewInstance(mqConf)
+	orderProducer := orderProducerConfig.NewInstance()
 
 	return &OrderRbmqPorducer{
 		RbmqInstance: orderProducer,
