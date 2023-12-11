@@ -11,8 +11,8 @@ type RbmqInstance struct {
 
 func (c *ConsumerConfig) NewInstance(conf Conf) *RbmqInstance {
 	// 方法实现
-
-	ch, err := Init(conf)
+	channelKsy := c.ExchangeName + c.QueueName + c.KeyName
+	ch, err := Init(conf, channelKsy)
 	if err != nil {
 		log.Fatal("init rabbit mq err: " + err.Error())
 	}

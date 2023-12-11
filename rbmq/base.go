@@ -24,7 +24,7 @@ var (
 )
 
 // Init 初始化
-func Init(c Conf) (ch *Channel, err error) {
+func Init(c Conf, channelKey string) (ch *Channel, err error) {
 	if c.Addr == "" {
 		return nil, nil
 	}
@@ -38,7 +38,7 @@ func Init(c Conf) (ch *Channel, err error) {
 		return nil, fmt.Errorf("new mq conn err: %v", err)
 	}
 
-	defaultChannel, err = defaultConn.Channel()
+	defaultChannel, err = defaultConn.Channel(channelKey)
 	if err != nil {
 		return nil, fmt.Errorf("new mq channel err: %v", err)
 	}

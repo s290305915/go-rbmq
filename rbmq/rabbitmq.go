@@ -2,13 +2,15 @@ package rbmq
 
 import (
 	"log"
+	"sync"
 	"sync/atomic"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-const delay = 3 // reconnect after delay seconds
+const delay = 3         // reconnect after delay seconds
+var channelMap sync.Map // ExchangeName -> Channel
 
 // Connection amqp.Connection wrapper
 type Connection struct {
@@ -16,7 +18,10 @@ type Connection struct {
 }
 
 // Channel wrap amqp.Connection.Channel, get a auto reconnect channel
-func (c *Connection) Channel() (*Channel, error) {
+func (c *Connection) Channel(channelKey string) (*Channel, error) {
+	if c, ok := channelMap.Load(channelKey); ok && c != nil {
+		return &Channel{Channel: c.(*amqp.Channel)}, nil
+	}
 	ch, err := c.Connection.Channel()
 	if err != nil {
 		return nil, err
@@ -54,7 +59,7 @@ func (c *Connection) Channel() (*Channel, error) {
 		}
 
 	}()
-
+	channelMap.Store(channelKey, ch)
 	return channel, nil
 }
 

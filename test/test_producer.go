@@ -17,7 +17,7 @@ func LoadProducer(mqConf rbmq.Conf) *OrderRbmqPorducer {
 	orderProducerConfig := new(rbmq.ConsumerConfig)
 	orderProducerConfig.ExchangeName = "test_exchange"
 	orderProducerConfig.QueueName = "queue1"
-	orderProducerConfig.KeyName = "key_producer"
+	orderProducerConfig.KeyName = "key_consumer"
 	orderProducerConfig.ExchangeType = rbmq.DIRECT_EXCHANGE
 	orderProducer := orderProducerConfig.NewInstance(mqConf)
 
