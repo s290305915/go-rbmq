@@ -1,4 +1,4 @@
-package test
+package main
 
 import (
 	"fmt"
@@ -25,8 +25,8 @@ func BenchmarkProducer(b *testing.B) {
 	fmt.Println("启动测试进程")
 
 	var wg sync.WaitGroup
-	maxConcurrency := 1000 // 最大并发数量
-	totalRequests := 10000 // 总请求数量
+	maxConcurrency := 100 // 最大并发数量
+	totalRequests := 1000 // 总请求数量
 
 	//maxConcurrency := b.N // 最大并发数量
 	//totalRequests := b.N  // 总请求数量

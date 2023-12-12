@@ -18,10 +18,10 @@ type Connection struct {
 }
 
 // Channel wrap amqp.Connection.Channel, get a auto reconnect channel
-func (c *Connection) Channel(channelKey string) (*Channel, error) {
-	if c, ok := channelMap.Load(channelKey); ok && c != nil {
-		return &Channel{Channel: c.(*amqp.Channel)}, nil
-	}
+func (c *Connection) Channel() (*Channel, error) {
+	//if c, ok := channelMap.Load(channelKey); ok && c != nil {
+	//	return &Channel{Channel: c.(*amqp.Channel)}, nil
+	//}
 	ch, err := c.Connection.Channel()
 	if err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (c *Connection) Channel(channelKey string) (*Channel, error) {
 		}
 
 	}()
-	channelMap.Store(channelKey, ch)
+	//channelMap.Store(channelKey, ch)
 	return channel, nil
 }
 

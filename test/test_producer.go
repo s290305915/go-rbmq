@@ -1,4 +1,4 @@
-package test
+package main
 
 import (
 	"log"
@@ -12,14 +12,18 @@ type OrderRbmqPorducer struct {
 }
 
 func LoadProducer(mqConf rbmq.Conf) *OrderRbmqPorducer {
-
+	rabbit, err := rbmq.NewRabbit(&mqConf)
+	if err != nil {
+		return nil
+	}
 	// 生产者注册RabbitMQ
 	orderProducerConfig := new(rbmq.ConsumerConfig)
 	orderProducerConfig.ExchangeName = "test_exchange"
 	orderProducerConfig.QueueName = "queue1"
 	orderProducerConfig.KeyName = "key_consumer"
 	orderProducerConfig.ExchangeType = rbmq.DIRECT_EXCHANGE
-	orderProducer := orderProducerConfig.NewInstance(mqConf)
+	//orderProducer := orderProducerConfig.NewInstance(mqConf)
+	orderProducer := orderProducerConfig.NewInstanceByConn(rabbit)
 
 	return &OrderRbmqPorducer{
 		RbmqInstance: orderProducer,

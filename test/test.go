@@ -1,4 +1,4 @@
-package test
+package main
 
 import (
 	"log"
@@ -10,14 +10,13 @@ import (
 	"github.com/s290305915/go-rbmq/rbmq"
 )
 
-func test() {
-
+func main() {
 	mqConf := rbmq.Conf{
-		Addr:  "-",
+		Addr:  "106.14.89.147",
 		Port:  "5672",
-		User:  "-",
-		Pwd:   "-",
-		Vhost: "-",
+		User:  "admin",
+		Pwd:   "123",
+		Vhost: "/",
 	}
 
 	time.Sleep(3 * time.Second)
@@ -25,13 +24,13 @@ func test() {
 	orderConsu := LoadConsumer(mqConf)
 	orderConsu.Consume()
 
-	orderProdc := LoadProducer(mqConf)
+	//orderProdc := LoadProducer(mqConf)
 
-	go func() {
-		for {
-			orderProdc.Send([]byte("雷猴"))
-		}
-	}()
+	//go func() {
+	//	for {
+	//		orderProdc.Send([]byte("雷猴"))
+	//	}
+	//}()
 
 	sigterm := make(chan os.Signal, 1)
 	signal.Notify(sigterm, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)

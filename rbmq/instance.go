@@ -35,3 +35,29 @@ func (c *ConsumerConfig) NewInstance(conf Conf) *RbmqInstance {
 		MqChan:         ch,
 	}
 }
+
+func (c *ConsumerConfig) NewInstanceByConn(r *Rabbit) *RbmqInstance {
+	defaultConn = &Connection{r.conn}
+	channel, err := defaultConn.Channel()
+	if err != nil {
+		log.Fatalf("create channel err: %v", err)
+	}
+
+	if err := channel.ExchangeDeclare(c.ExchangeName, c.ExchangeType.String()); err != nil {
+		log.Fatalf("create exchange err: %v", err)
+	}
+
+	if err := channel.QueueDeclare(c.QueueName); err != nil {
+		log.Fatalf("create queue err: %v", err)
+	}
+
+	if err := channel.QueueBind(c.QueueName, c.KeyName, c.ExchangeName); err != nil {
+		log.Fatalf("bind queue err: %v", err)
+	}
+
+	log.Printf("init mq success, exchange: %s, queue: %s, key: %s", c.ExchangeName, c.QueueName, c.KeyName)
+	return &RbmqInstance{
+		ConsumerConfig: c,
+		MqChan:         channel,
+	}
+}
