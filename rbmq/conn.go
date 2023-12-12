@@ -42,7 +42,7 @@ func NewRabbit(config *Conf) (*Rabbit, error) {
 	}, err
 }
 
-const connStrFormat = "amqp://%v:%v@%v:%v%v"
+const connStrFormat = "amqp://%v:%v@%v:%v/%v"
 
 func newConn(config *Conf) (*amqp091.Connection, error) {
 	vhost := config.Vhost
