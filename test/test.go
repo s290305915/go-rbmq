@@ -1,18 +1,17 @@
 package main
 
 import (
+	"github.com/s290305915/go-rbmq/rbmq"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/s290305915/go-rbmq/rbmq"
 )
 
 func main() {
 	mqConf := rbmq.Conf{
-		Addr:  "106.14.89.147",
+		Addr:  "127.0.0.1",
 		Port:  "5672",
 		User:  "admin",
 		Pwd:   "123",

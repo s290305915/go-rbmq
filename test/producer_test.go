@@ -34,7 +34,7 @@ func BenchmarkProducer(b *testing.B) {
 	counter := 0
 
 	mqConf := rbmq.Conf{
-		Addr:  "106.14.89.147",
+		Addr:  "127.0.0.1",
 		Port:  "5672",
 		User:  "admin",
 		Pwd:   "123",
