@@ -1,13 +1,12 @@
-package test
+package main
 
 import (
+	"github.com/s290305915/go-rbmq/rbmq"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/s290305915/go-rbmq/rbmq"
 )
 
 func Test() {
