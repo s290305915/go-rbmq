@@ -5,7 +5,6 @@
 </a>
 <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/s290305915/go-rmbq">
 <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/s290305915/go-rmbq?style=social">
-</p>
 
 ## 简介
 

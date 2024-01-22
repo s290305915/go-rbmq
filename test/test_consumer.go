@@ -1,4 +1,4 @@
-package test
+package main
 
 import (
 	"context"
@@ -12,6 +12,10 @@ type OrderRbmqConsumer struct {
 }
 
 func LoadConsumer() *OrderRbmqConsumer {
+	rabbit, err := rbmq.NewRabbit(&mqConf)
+	if err != nil {
+		return nil
+	}
 
 	// 消费者注册RabbitMQ
 	orderConsumerConfig := new(rbmq.ConsumerConfig)
@@ -20,11 +24,11 @@ func LoadConsumer() *OrderRbmqConsumer {
 	orderConsumerConfig.KeyName = "key_consumer"
 	orderConsumerConfig.ExchangeType = rbmq.DIRECT_EXCHANGE
 
-	orderConsumer := orderConsumerConfig.NewInstance()
-	log.Printf("orderConsu is %+v", orderConsumer)
-
+	//orderConsumer := orderConsumerConfig.NewInstance()
+	//log.Printf("orderConsu is %+v", orderConsumer)
+	consumer := orderConsumerConfig.NewInstanceByConn(rabbit)
 	return &OrderRbmqConsumer{
-		RbmqInstance: orderConsumer,
+		RbmqInstance: consumer,
 	}
 }
 
