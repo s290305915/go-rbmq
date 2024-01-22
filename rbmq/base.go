@@ -40,7 +40,7 @@ var (
 )
 
 // Init 初始化
-func Init(c Conf, channelKey string) (err error) {
+func Init(c Conf) (err error) {
 	if c.Addr == "" {
 		return fmt.Errorf("RabbitMQ 连接地址为空！")
 	}

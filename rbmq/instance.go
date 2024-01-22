@@ -12,8 +12,6 @@ type RbmqInstance struct {
 
 func (c *ConsumerConfig) NewInstance() *RbmqInstance {
 	// 方法实现
-	channelKsy := c.ExchangeName + c.QueueName + c.KeyName
-	ch, err := Init(conf, channelKsy)
 
 	//fmt.Printf("ChannelPool：%+v", ChannelPool)
 
@@ -47,7 +45,7 @@ func (c *ConsumerConfig) NewInstance() *RbmqInstance {
 }
 
 func (c *ConsumerConfig) NewInstanceByConn(r *Rabbit) *RbmqInstance {
-	defaultConn = &Connection{r.conn}
+	defaultConn := &Connection{r.conn}
 	channel, err := defaultConn.Channel()
 	if err != nil {
 		log.Fatalf("create channel err: %v", err)

@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/s290305915/go-rbmq/rbmq"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/s290305915/go-rbmq/rbmq"
 )
 
 func Test() {
@@ -27,7 +28,7 @@ func Test() {
 	time.Sleep(3 * time.Second)
 	rbmq.Init(mqConf)
 
-	orderConsu := LoadConsumer()
+	orderConsu := LoadConsumer(mqConf)
 	go orderConsu.Consume()
 
 	//orderProdc := LoadProducer()

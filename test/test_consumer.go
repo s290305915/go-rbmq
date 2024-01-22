@@ -11,7 +11,7 @@ type OrderRbmqConsumer struct {
 	*rbmq.RbmqInstance
 }
 
-func LoadConsumer() *OrderRbmqConsumer {
+func LoadConsumer(mqConf rbmq.Conf) *OrderRbmqConsumer {
 	rabbit, err := rbmq.NewRabbit(&mqConf)
 	if err != nil {
 		return nil
