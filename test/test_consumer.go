@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/s290305915/go-rbmq/rbmq"
@@ -12,7 +11,7 @@ type OrderRbmqConsumer struct {
 	*rbmq.RbmqInstance
 }
 
-func LoadConsumer(mqConf rbmq.Conf) *OrderRbmqConsumer {
+func LoadConsumer() *OrderRbmqConsumer {
 	rabbit, err := rbmq.NewRabbit(&mqConf)
 	if err != nil {
 		return nil
@@ -25,7 +24,7 @@ func LoadConsumer(mqConf rbmq.Conf) *OrderRbmqConsumer {
 	orderConsumerConfig.KeyName = "key_consumer"
 	orderConsumerConfig.ExchangeType = rbmq.DIRECT_EXCHANGE
 
-	//orderConsumer := orderConsumerConfig.NewInstance(mqConf)
+	//orderConsumer := orderConsumerConfig.NewInstance()
 	//log.Printf("orderConsu is %+v", orderConsumer)
 	consumer := orderConsumerConfig.NewInstanceByConn(rabbit)
 	return &OrderRbmqConsumer{
@@ -34,7 +33,7 @@ func LoadConsumer(mqConf rbmq.Conf) *OrderRbmqConsumer {
 }
 
 func (c *OrderRbmqConsumer) Consume() {
-	fmt.Printf("c is %+v", c)
+	//fmt.Printf("c is %+v", c)
 	conf := c.ConsumerConfig
 	log.Printf("start consumer: %s, %s, %s\n", conf.ExchangeName, conf.QueueName, conf.KeyName)
 

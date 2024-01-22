@@ -9,22 +9,29 @@ import (
 	"time"
 )
 
-func main() {
+func Test() {
+
 	mqConf := rbmq.Conf{
 		Addr:  "127.0.0.1",
 		Port:  "5672",
 		User:  "admin",
 		Pwd:   "123",
 		Vhost: "/",
+		PoolIdle: rbmq.Idle{
+			MaxSize: 100,
+			MinIdle: 1000,
+			MaxIdle: 2000,
+		},
 	}
 
 	time.Sleep(3 * time.Second)
+	rbmq.Init(mqConf)
 
-	orderConsu := LoadConsumer(mqConf)
-	orderConsu.Consume()
+	orderConsu := LoadConsumer()
+	go orderConsu.Consume()
 
-	//orderProdc := LoadProducer(mqConf)
-
+	//orderProdc := LoadProducer()
+	//
 	//go func() {
 	//	for {
 	//		orderProdc.Send([]byte("雷猴"))
