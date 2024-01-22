@@ -10,28 +10,34 @@ import (
 	"github.com/s290305915/go-rbmq/rbmq"
 )
 
-func test() {
+func Test() {
 
 	mqConf := rbmq.Conf{
-		Addr:  "-",
+		Addr:  "127.0.0.1",
 		Port:  "5672",
-		User:  "-",
-		Pwd:   "-",
-		Vhost: "-",
+		User:  "admin",
+		Pwd:   "123",
+		Vhost: "/",
+		PoolIdle: rbmq.Idle{
+			MaxSize: 100,
+			MinIdle: 1000,
+			MaxIdle: 2000,
+		},
 	}
 
 	time.Sleep(3 * time.Second)
+	rbmq.Init(mqConf)
 
-	orderConsu := LoadConsumer(mqConf)
-	orderConsu.Consume()
+	orderConsu := LoadConsumer()
+	go orderConsu.Consume()
 
-	orderProdc := LoadProducer(mqConf)
-
-	go func() {
-		for {
-			orderProdc.Send([]byte("雷猴"))
-		}
-	}()
+	//orderProdc := LoadProducer()
+	//
+	//go func() {
+	//	for {
+	//		orderProdc.Send([]byte("雷猴"))
+	//	}
+	//}()
 
 	sigterm := make(chan os.Signal, 1)
 	signal.Notify(sigterm, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)

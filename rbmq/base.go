@@ -3,46 +3,89 @@ package rbmq
 import (
 	"context"
 	"fmt"
+	pool "github.com/jolestar/go-commons-pool/v2"
+	"sync"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type (
+	Idle struct {
+		MaxSize int `json:"max_size" yaml:"max_size"`
+		MinIdle int `json:"min_idle" yaml:"min_idle"`
+		MaxIdle int `json:"max_idle" yaml:"max_idle"`
+	}
+
 	Conf struct {
-		Addr  string `json:"addr" yaml:"addr"`
-		Port  string `json:"port" yaml:"port"`
-		User  string `json:"user" yaml:"user"`
-		Pwd   string `json:"pwd" yaml:"pwd"`
-		Vhost string `json:"vhost" yaml:"vhost"`
+		Addr     string `json:"addr" yaml:"addr"`
+		Port     string `json:"port" yaml:"port"`
+		User     string `json:"user" yaml:"user"`
+		Pwd      string `json:"pwd" yaml:"pwd"`
+		Vhost    string `json:"vhost" yaml:"vhost"`
+		PoolIdle Idle   `json:"pool_idle" yaml:"vhost"`
+	}
+
+	ChannelFactory struct {
+		mqConfig  Conf
+		mqConnStr string
 	}
 )
 
 var (
-	defaultConn    *Connection
-	defaultChannel *Channel
+	ChannelPool *pool.ObjectPool // 连接池
+
+	activeConn *Connection // 当前操作链接
+	mutex      sync.Mutex  // 互斥锁
 )
 
 // Init 初始化
-func Init(c Conf) (ch *Channel, err error) {
+func Init(c Conf) (err error) {
 	if c.Addr == "" {
-		return nil, nil
+		return fmt.Errorf("RabbitMQ 连接地址为空！")
 	}
-	defaultConn, err = Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/%s",
+
+	connStr := fmt.Sprintf("amqp://%s:%s@%s:%s/%s",
 		c.User,
 		c.Pwd,
 		c.Addr,
 		c.Port,
-		c.Vhost))
-	if err != nil {
-		return nil, fmt.Errorf("new mq conn err: %v", err)
+		c.Vhost)
+
+	activeConn, _ = Dial(connStr)
+
+	maxSize := c.PoolIdle.MaxSize
+	if maxSize <= 0 || maxSize > 2000 {
+		maxSize = 2000
+	}
+	minIdle := c.PoolIdle.MinIdle
+	if minIdle <= 0 || minIdle > 2000 {
+		minIdle = 2000
+	}
+	maxIdle := c.PoolIdle.MaxIdle
+	if maxIdle <= 0 || maxIdle > 2000 {
+		maxIdle = 2000
 	}
 
-	defaultChannel, err = defaultConn.Channel()
-	if err != nil {
-		return nil, fmt.Errorf("new mq channel err: %v", err)
-	}
-	return defaultChannel, nil
+	ChannelPool = pool.NewObjectPool(context.TODO(), &ChannelFactory{mqConfig: c, mqConnStr: connStr}, &pool.ObjectPoolConfig{
+		LIFO:                     false,
+		MaxTotal:                 maxSize,
+		MinIdle:                  minIdle,
+		MaxIdle:                  maxIdle,
+		TestOnCreate:             false,
+		TestOnBorrow:             false,
+		TestOnReturn:             false,
+		TestWhileIdle:            false,
+		BlockWhenExhausted:       true,
+		MinEvictableIdleTime:     0,
+		SoftMinEvictableIdleTime: 0,
+		NumTestsPerEvictionRun:   0,
+		EvictionPolicyName:       "",
+		TimeBetweenEvictionRuns:  0,
+		EvictionContext:          nil,
+	})
+
+	return nil
 }
 
 // ExchangeDeclare 创建交换机.
@@ -106,5 +149,68 @@ func (ch *Channel) NewConsumer(ctx context.Context, queue string, handler func([
 		_ = msg.Ack(false)
 	}
 
+	return nil
+}
+
+func (cf *ChannelFactory) MakeObject(ctx context.Context) (*pool.PooledObject, error) {
+	//fmt.Printf("make object\n")
+	//fmt.Printf("activeConn", activeConn)
+	if activeConn.IsClosed() {
+		mutex.Lock()
+		var cErr error
+		activeConn, cErr = Dial(cf.mqConnStr)
+		if cErr != nil {
+			mutex.Unlock()
+			return nil, cErr
+		}
+		ChannelPool.Clear(ctx)
+		mutex.Unlock()
+	}
+	ch, err := activeConn.Channel()
+	if err != nil {
+		return nil, err
+	}
+	return pool.NewPooledObject(
+		ch,
+	), nil
+}
+
+func (cf *ChannelFactory) DestroyObject(ctx context.Context, object *pool.PooledObject) error {
+	ch := object.Object.(*Channel)
+	//fmt.Printf("destroy object\n")
+	if ch.IsClosed() {
+		return nil
+	}
+	return ch.Close()
+}
+
+func (cf *ChannelFactory) ValidateObject(ctx context.Context, object *pool.PooledObject) bool {
+	//fmt.Printf("validate Object\n")
+	if activeConn.IsClosed() {
+		return false
+	}
+	ch := object.Object.(*Channel)
+	if ch.IsClosed() {
+		return false
+	}
+	return true
+}
+
+func (cf *ChannelFactory) ActivateObject(ctx context.Context, object *pool.PooledObject) error {
+	//fmt.Printf("activate object\n")
+	ch := object.Object.(*Channel)
+	if activeConn.IsClosed() || ch.IsClosed() {
+		return amqp.Error{}
+	}
+	return nil
+}
+
+func (cf *ChannelFactory) PassivateObject(ctx context.Context, object *pool.PooledObject) error {
+	// do passivate
+	//fmt.Printf("passivate object\n")
+	ch := object.Object.(*Channel)
+	if ch.IsClosed() {
+		return amqp.Error{}
+	}
 	return nil
 }
