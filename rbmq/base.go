@@ -100,6 +100,10 @@ func (ch *Channel) ExchangeDeclare(name string, kind string) (err error) {
 
 // Publish 发布消息.
 func (ch *Channel) Publish(ctx context.Context, exchange, key string, body []byte) (err error) {
+	body, err = AddContextToMessage(ctx, body)
+	if err != nil {
+		return err // 无法添加上下文，直接返回
+	}
 	_, err = ch.Channel.PublishWithDeferredConfirmWithContext(ctx, exchange, key, false, false,
 		amqp.Publishing{ContentType: "text/plain", Body: body})
 	return err
@@ -107,6 +111,10 @@ func (ch *Channel) Publish(ctx context.Context, exchange, key string, body []byt
 
 // PublishWithDelay 发布延迟消息.
 func (ch *Channel) PublishWithDelay(ctx context.Context, exchange, key string, body []byte, timer time.Duration) (err error) {
+	body, err = AddContextToMessage(ctx, body)
+	if err != nil {
+		return err // 无法添加上下文，直接返回
+	}
 	_, err = ch.Channel.PublishWithDeferredConfirmWithContext(ctx, exchange, key, false, false,
 		amqp.Publishing{ContentType: "text/plain", Body: body, Expiration: fmt.Sprintf("%d", timer.Milliseconds())})
 	return err

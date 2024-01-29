@@ -30,17 +30,17 @@ func TestProducerSingle(t *testing.T) {
 
 	orderProdc := LoadProducer(mqConf)
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, "ProductLine", "PD1")
-	ctx = context.WithValue(ctx, "SaasToken", "")
-	ctx = context.WithValue(ctx, "AppId", "PD1_APP")
+	ctx = context.WithValue(ctx, "ProductLine", "ggdxx")
+	ctx = context.WithValue(ctx, "SaasToken", "--xxx--")
+	ctx = context.WithValue(ctx, "AppId", "ffee_pc")
 
-	ctx = context.WithValue(ctx, "ddd", "123")
-	ctx = context.WithValue(ctx, "ProductLine_key", map[string]any{"key1": "123", "key2": 99, "key3": struct {
+	ctx = context.WithValue(ctx, "ddd", "ggg")
+	ctx = context.WithValue(ctx, "ProductLine_key", map[string]any{"key1": "ggg", "key2": 11199, "key3": struct {
 		aa string
 		bb int
 	}{
-		aa: "123",
-		bb: 99,
+		aa: "cc",
+		bb: 180,
 	}})
 
 	cFun := func() { fmt.Println("测试结束") }

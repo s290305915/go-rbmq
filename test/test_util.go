@@ -87,14 +87,7 @@ func LoadProducer(mqConf rbmq.Conf) *OrderRbmqPorducer {
 }
 
 func (c *OrderRbmqPorducer) Send(ctx context.Context, data []byte) error {
-	var err error
 	log.Println("start publisher:", c.ExchangeName, c.KeyName, string(data))
-	data, err = rbmq.AddContextToMessage(ctx, data)
-	if err != nil {
-		return err // 无法添加上下文，直接返回
-	}
-
-	log.Printf("publish data with context-value:%s", string(data))
 	go func() {
 		pErr := c.MqChan.Publish(ctx, c.ExchangeName, c.KeyName, data)
 		if pErr != nil {
