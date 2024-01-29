@@ -2,12 +2,12 @@ package rbmq
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	pool "github.com/jolestar/go-commons-pool/v2"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"sync"
 	"time"
-
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type (
@@ -31,6 +31,11 @@ type (
 		mqConnStr string
 	}
 )
+
+type DataWithCtx struct {
+	Ctx  map[string]any `json:"ctx"`
+	Data []byte         `json:"data"`
+}
 
 var (
 	ChannelPool *pool.ObjectPool // 连接池
@@ -94,15 +99,15 @@ func (ch *Channel) ExchangeDeclare(name string, kind string) (err error) {
 }
 
 // Publish 发布消息.
-func (ch *Channel) Publish(exchange, key string, body []byte) (err error) {
-	_, err = ch.Channel.PublishWithDeferredConfirmWithContext(context.Background(), exchange, key, false, false,
+func (ch *Channel) Publish(ctx context.Context, exchange, key string, body []byte) (err error) {
+	_, err = ch.Channel.PublishWithDeferredConfirmWithContext(ctx, exchange, key, false, false,
 		amqp.Publishing{ContentType: "text/plain", Body: body})
 	return err
 }
 
 // PublishWithDelay 发布延迟消息.
-func (ch *Channel) PublishWithDelay(exchange, key string, body []byte, timer time.Duration) (err error) {
-	_, err = ch.Channel.PublishWithDeferredConfirmWithContext(context.Background(), exchange, key, false, false,
+func (ch *Channel) PublishWithDelay(ctx context.Context, exchange, key string, body []byte, timer time.Duration) (err error) {
+	_, err = ch.Channel.PublishWithDeferredConfirmWithContext(ctx, exchange, key, false, false,
 		amqp.Publishing{ContentType: "text/plain", Body: body, Expiration: fmt.Sprintf("%d", timer.Milliseconds())})
 	return err
 }
@@ -128,7 +133,7 @@ func (ch *Channel) QueueBind(name, key, exchange string) (err error) {
 }
 
 // NewConsumer 实例化一个消费者, 会单独用一个channel.
-func (ch *Channel) NewConsumer(ctx context.Context, queue string, handler func([]byte) error) error {
+func (ch *Channel) NewConsumer(ctx context.Context, queue string, handler func(context.Context, []byte) error) error {
 	deliveries, err := ch.Consume(queue, "", false, false, false, false, nil)
 	if err != nil {
 		return fmt.Errorf("consume err: %v, queue: %s", err, queue)
@@ -141,7 +146,14 @@ func (ch *Channel) NewConsumer(ctx context.Context, queue string, handler func([
 			return fmt.Errorf("context cancel")
 		default:
 		}
-		err = handler(msg.Body)
+
+		customCtx, body, ctxErr := GetContextFromMessage(msg.Body)
+		if ctxErr != nil {
+			_ = msg.Reject(true)
+			continue
+		}
+
+		err = handler(customCtx, body)
 		if err != nil {
 			_ = msg.Reject(true)
 			continue
@@ -213,4 +225,44 @@ func (cf *ChannelFactory) PassivateObject(ctx context.Context, object *pool.Pool
 		return amqp.Error{}
 	}
 	return nil
+}
+
+// 从 map[string]any 中创建上下文对象
+func GetContextFromData(ctxData map[string]any) context.Context {
+	ctx := context.Background()
+	for key, value := range ctxData {
+		ctx = context.WithValue(ctx, key, value)
+	}
+	return ctx
+}
+
+// 将上下文信息添加到消息体中
+func AddContextToMessage(ctx context.Context, data []byte) ([]byte, error) {
+	// 将上下文对象转换为 map[string]any
+	ctxData := GetKeyValues(ctx)
+
+	dataWithCtx := DataWithCtx{
+		Ctx:  ctxData,
+		Data: data,
+	}
+
+	dataWithContext, err := json.Marshal(dataWithCtx)
+	if err != nil {
+		return nil, err
+	}
+	return dataWithContext, nil
+}
+
+// 从消息体中解析出上下文信息
+func GetContextFromMessage(body []byte) (context.Context, []byte, error) {
+	var dataWithCtx DataWithCtx
+	err := json.Unmarshal(body, &dataWithCtx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// 从 map 中创建上下文对象
+	ctx := GetContextFromData(dataWithCtx.Ctx)
+
+	return ctx, dataWithCtx.Data, nil
 }
