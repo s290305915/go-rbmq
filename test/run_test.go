@@ -1,16 +1,18 @@
-package main
+package test
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"testing"
 	"time"
 
 	"github.com/s290305915/go-rbmq/rbmq"
 )
 
-func Test() {
+func TestRun(t *testing.T) {
 
 	mqConf := rbmq.Conf{
 		Addr:  "127.0.0.1",
@@ -28,16 +30,20 @@ func Test() {
 	time.Sleep(3 * time.Second)
 	rbmq.Init(mqConf)
 
-	orderConsu := LoadConsumer(mqConf)
+	orderConsu := LoadConsumer2(mqConf)
 	go orderConsu.Consume()
 
-	//orderProdc := LoadProducer()
-	//
-	//go func() {
-	//	for {
-	//		orderProdc.Send([]byte("雷猴"))
-	//	}
-	//}()
+	orderProdc := LoadProducer(mqConf)
+
+	go func() {
+		for {
+			ctx := context.Background()
+			err := orderProdc.Send(ctx, []byte("雷猴"))
+			if err != nil {
+				return
+			}
+		}
+	}()
 
 	sigterm := make(chan os.Signal, 1)
 	signal.Notify(sigterm, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)

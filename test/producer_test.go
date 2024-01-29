@@ -1,26 +1,16 @@
-package main
+package test
 
 import (
+	"context"
 	"fmt"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/s290305915/go-rbmq/rbmq"
 )
 
-func BenchmarkProducerTest(b *testing.B) {
-	b.StopTimer()
+func TestProducerSingle(t *testing.T) {
 	fmt.Println("启动测试进程")
-
-	var wg sync.WaitGroup
-	maxConcurrency := 10000 // 最大并发数量
-	totalRequests := 100000 // 总请求数量
-
-	//maxConcurrency := b.N // 最大并发数量
-	//totalRequests := b.N  // 总请求数量
-
-	counter := 0
 
 	mqConf := rbmq.Conf{
 		Addr:  "127.0.0.1",
@@ -38,31 +28,31 @@ func BenchmarkProducerTest(b *testing.B) {
 	time.Sleep(3 * time.Second)
 	rbmq.Init(mqConf)
 
-	b.StartTimer()
-
 	orderProdc := LoadProducer(mqConf)
-	for i := 0; i < totalRequests; i++ {
-		startTime := time.Now()
-		wg.Add(1)
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "ProductLine", "PD1")
+	ctx = context.WithValue(ctx, "SaasToken", "")
+	ctx = context.WithValue(ctx, "AppId", "PD1_APP")
 
-		//doMiter(i)
+	ctx = context.WithValue(ctx, "ddd", "123")
+	ctx = context.WithValue(ctx, "ProductLine_key", map[string]any{"key1": "123", "key2": 99, "key3": struct {
+		aa string
+		bb int
+	}{
+		aa: "123",
+		bb: 99,
+	}})
 
-		go func(i int) {
-			defer wg.Done()
-			orderProdc.Send([]byte(randomString(20)))
-		}(i)
+	cFun := func() { fmt.Println("测试结束") }
+	ctx, cFun = context.WithTimeout(ctx, 1*time.Second)
+	ctx = context.WithValue(ctx, "ddd", "123")
 
-		if (i+1)%maxConcurrency == 0 {
-			counter++
-			wg.Wait()
-			endTime := time.Now()
-			costTime := endTime.Sub(startTime).Seconds()
-			fmt.Println("当前并发次数:", counter, "总请求数量:", i, "耗时:", costTime, "秒")
-			//time.Sleep(1 * time.Second)
-		}
+	cFun()
+
+	err := orderProdc.Send(ctx, []byte(randomString(20)))
+	if err != nil {
+		t.Error(err)
 	}
-
-	wg.Wait()
 
 	fmt.Println("测试结束")
 
