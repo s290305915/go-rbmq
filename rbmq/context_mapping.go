@@ -10,6 +10,11 @@ type iface struct {
 	itab, data uintptr
 }
 
+type CtxData struct {
+	Key   string `json:"key"`
+	Value any    `json:"value"`
+}
+
 type emptyCtx int
 
 type valueCtx struct {
@@ -17,13 +22,13 @@ type valueCtx struct {
 	key, val any
 }
 
-func GetKeyValues(ctx context.Context) map[string]any {
-	m := make(map[string]any)
-	getKeyValue(ctx, m)
+func GetKeyValues(ctx context.Context) []CtxData {
+	m := make([]CtxData, 0)
+	getKeyValue(ctx, &m)
 	return m
 }
 
-func getKeyValue(ctx context.Context, m map[string]any) {
+func getKeyValue(ctx context.Context, m *[]CtxData) {
 	ictx := *(*iface)(unsafe.Pointer(&ctx))
 	if ictx.data == 0 || int(*(*emptyCtx)(unsafe.Pointer(ictx.data))) == 0 {
 		return
@@ -31,8 +36,11 @@ func getKeyValue(ctx context.Context, m map[string]any) {
 
 	valCtx := (*valueCtx)(unsafe.Pointer(ictx.data))
 	if valCtx != nil && valCtx.key != nil {
-		key := fmt.Sprintf("%v", valCtx.key)
-		m[key] = valCtx.val
+		key := fmt.Sprintf("%+v", valCtx.key)
+		*m = append(*m, CtxData{
+			Key:   key,
+			Value: valCtx.val,
+		})
 	}
 	getKeyValue(valCtx.Context, m)
 }

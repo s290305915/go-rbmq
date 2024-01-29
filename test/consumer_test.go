@@ -2,6 +2,10 @@ package test
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 	"testing"
 	"time"
 
@@ -28,7 +32,13 @@ func TestConsumerSingle(t *testing.T) {
 	rbmq.Init(mqConf)
 
 	orderProdc := LoadConsumer2(mqConf)
-	orderProdc.Consume()
+	go orderProdc.Consume()
+
+	sigterm := make(chan os.Signal, 1)
+	signal.Notify(sigterm, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
+
+	<-sigterm // Await a sigterm signal before safely closing the consumer
+	log.Println("app shut down")
 
 	fmt.Println("测试结束")
 }

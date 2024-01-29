@@ -37,7 +37,7 @@ func LoadConsumer2(mqConf rbmq.Conf) *OrderRbmqConsumer {
 func (c *OrderRbmqConsumer) Consume() {
 	//fmt.Printf("c is %+v", c)
 	conf := c.ConsumerConfig
-	log.Printf("start consumer: %s, %s, %s\n", conf.ExchangeName, conf.QueueName, conf.KeyName)
+	log.Printf("start consumer ok: %s, %s, %s\n", conf.ExchangeName, conf.QueueName, conf.KeyName)
 
 	go func() {
 		err := c.MqChan.NewConsumer(context.Background(), conf.QueueName, func(ctx context.Context, body []byte) error {

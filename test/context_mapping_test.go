@@ -72,8 +72,8 @@ func TestContextToMapping(t *testing.T) {
 	// [key: &{Name:key4 Number:3}] [value: <nil>]
 }
 
-func printMapKeyValue(m map[string]interface{}) {
-	for k, v := range m {
-		fmt.Printf("[key: %s value: %+v]\n", k, v)
+func printMapKeyValue(m []rbmq.CtxData) {
+	for _, v := range m {
+		fmt.Printf("[key: %s value: %+v]\n", v.Key, v.Value)
 	}
 }

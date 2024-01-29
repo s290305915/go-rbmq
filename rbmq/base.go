@@ -33,8 +33,8 @@ type (
 )
 
 type DataWithCtx struct {
-	Ctx  map[string]any `json:"ctx"`
-	Data []byte         `json:"data"`
+	Ctx  []CtxData `json:"ctx"`
+	Data []byte    `json:"data"`
 }
 
 var (
@@ -236,11 +236,14 @@ func (cf *ChannelFactory) PassivateObject(ctx context.Context, object *pool.Pool
 }
 
 // 从 map[string]any 中创建上下文对象
-func GetContextFromData(ctxData map[string]any) context.Context {
+func GetContextFromData(ctxData []CtxData) context.Context {
 	ctx := context.Background()
-	for key, value := range ctxData {
-		ctx = context.WithValue(ctx, key, value)
+	// 倒序排列
+	for i := len(ctxData) - 1; i >= 0; i-- {
+		cValue := ctxData[i]
+		ctx = context.WithValue(ctx, cValue.Key, cValue.Value)
 	}
+
 	return ctx
 }
 
