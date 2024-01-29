@@ -38,6 +38,7 @@ go get github.com/s290305915/go-rbmq
 ```
 |── rbmq                // rabbit-mq主要操作
 |  ├── base             // 初始化
+|  ├── context_mapping  // 上下文获取
 |  ├── exchange_types   // 交换机类型枚举
 |  ├── instance_config  // 接入各类参数
 |  ├── instance         // 实例化
@@ -57,5 +58,14 @@ go get github.com/s290305915/go-rbmq
 
 ## 2023年12月1日 更新
 增加go-commons-pool连接池配置
+
+## 2021年1月5日 更新
+增加context_mapping上下文获取并传递到消息和解析还原上下文
+
+生产者使用方法详见：[test_consumer](./test/producer_test.go)
+
+消费者使用方法详见：[test_consumer](./test/consumer_test.go)
+
+消费者需添加参数签名`func(ctx context.Context, body []byte) error`，其中ctx为上下文，body为消息体
 
 [amqp091-go](github.com/rabbitmq/amqp091-go)
