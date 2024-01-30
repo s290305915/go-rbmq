@@ -3,6 +3,10 @@ package test
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 	"testing"
 	"time"
 
@@ -47,12 +51,32 @@ func TestProducerSingle(t *testing.T) {
 	ctx, cFun = context.WithTimeout(ctx, 1*time.Second)
 	ctx = context.WithValue(ctx, "ddd", "123")
 
-	cFun()
+	go func() {
+		for {
+			// 发送消息带上下文
+			err := orderProdc.Send(ctx, []byte("雷猴"))
+			if err != nil {
+				log.Fatalf("publish msg err: %v", err)
+				return
+			}
 
-	err := orderProdc.Send(ctx, []byte(randomString(20)))
-	if err != nil {
-		t.Error(err)
-	}
+			// 发送消息不带上下文
+			err = orderProdc.SendWithoutContext([]byte(randomString(50)))
+			if err != nil {
+				log.Fatalf("publish msg err(no context): %v", err)
+				return
+			}
+
+			time.Sleep(1 * time.Second)
+		}
+	}()
+
+	cFun()
+	sigterm := make(chan os.Signal, 1)
+	signal.Notify(sigterm, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
+
+	<-sigterm // Await a sigterm signal before safely closing the consumer
+	log.Println("app shut down")
 
 	fmt.Println("测试结束")
 
