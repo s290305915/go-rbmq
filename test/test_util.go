@@ -99,6 +99,19 @@ func (c *OrderRbmqPorducer) Send(ctx context.Context, data []byte) error {
 	return nil
 }
 
+func (c *OrderRbmqPorducer) SendWithoutContext(data []byte) error {
+	log.Println("start publisher(no context):", c.ExchangeName, c.KeyName, string(data))
+	go func() {
+		pErr := c.MqChan.PublishWithoutContext(context.Background(), c.ExchangeName, c.KeyName, data)
+		if pErr != nil {
+			log.Fatalf("publish msg err(no context): %v", pErr)
+		}
+	}()
+
+	time.Sleep(1 * time.Second)
+	return nil
+}
+
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
 func randomString(length int) string {

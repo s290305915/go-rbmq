@@ -98,7 +98,7 @@ func (ch *Channel) ExchangeDeclare(name string, kind string) (err error) {
 	return ch.Channel.ExchangeDeclare(name, kind, true, false, false, false, nil)
 }
 
-// Publish 发布消息.
+// 发布消息. 带上下文传递
 func (ch *Channel) Publish(ctx context.Context, exchange, key string, body []byte) (err error) {
 	body, err = AddContextToMessage(ctx, body)
 	if err != nil {
@@ -109,12 +109,26 @@ func (ch *Channel) Publish(ctx context.Context, exchange, key string, body []byt
 	return err
 }
 
-// PublishWithDelay 发布延迟消息.
-func (ch *Channel) PublishWithDelay(ctx context.Context, exchange, key string, body []byte, timer time.Duration) (err error) {
+// Publish 发布消息. 不带上下文传递
+func (ch *Channel) PublishWithoutContext(ctx context.Context, exchange, key string, body []byte) (err error) {
+	_, err = ch.Channel.PublishWithDeferredConfirmWithContext(ctx, exchange, key, false, false,
+		amqp.Publishing{ContentType: "text/plain", Body: body})
+	return err
+}
+
+// 发布延迟消息. 带上下文传递
+func (ch *Channel) PublishDelay(ctx context.Context, exchange, key string, body []byte, timer time.Duration) (err error) {
 	body, err = AddContextToMessage(ctx, body)
 	if err != nil {
 		return err // 无法添加上下文，直接返回
 	}
+	_, err = ch.Channel.PublishWithDeferredConfirmWithContext(ctx, exchange, key, false, false,
+		amqp.Publishing{ContentType: "text/plain", Body: body, Expiration: fmt.Sprintf("%d", timer.Milliseconds())})
+	return err
+}
+
+// 发布延迟消息. 不带上下文传递
+func (ch *Channel) PublishDelayWithoutContext(ctx context.Context, exchange, key string, body []byte, timer time.Duration) (err error) {
 	_, err = ch.Channel.PublishWithDeferredConfirmWithContext(ctx, exchange, key, false, false,
 		amqp.Publishing{ContentType: "text/plain", Body: body, Expiration: fmt.Sprintf("%d", timer.Milliseconds())})
 	return err
@@ -235,7 +249,7 @@ func (cf *ChannelFactory) PassivateObject(ctx context.Context, object *pool.Pool
 	return nil
 }
 
-// 从 map[string]any 中创建上下文对象
+// 从 CtxData 中创建上下文对象
 func GetContextFromData(ctxData []CtxData) context.Context {
 	ctx := context.Background()
 	// 倒序排列
@@ -269,7 +283,13 @@ func GetContextFromMessage(body []byte) (context.Context, []byte, error) {
 	var dataWithCtx DataWithCtx
 	err := json.Unmarshal(body, &dataWithCtx)
 	if err != nil {
-		return nil, nil, err
+		ctx := context.Background()
+		return ctx, body, nil
+	}
+
+	if len(dataWithCtx.Ctx) == 0 || len(dataWithCtx.Data) == 0 {
+		ctx := context.Background()
+		return ctx, body, nil
 	}
 
 	// 从 map 中创建上下文对象
