@@ -37,7 +37,7 @@ func (c *ConsumerConfig) NewInstance() *RbmqInstance {
 		log.Fatalf("bind queue err: %v", err)
 	}
 
-	log.Printf("init mq success, exchange: %s, queue: %s, key: %s", c.ExchangeName, c.QueueName, c.KeyName)
+	log.Printf("init mq[%s@%s] success, exchange: %s, queue: %s, key: %s", c.MqConf.User, c.MqConf.Addr, c.ExchangeName, c.QueueName, c.KeyName)
 	return &RbmqInstance{
 		ConsumerConfig: c,
 		MqChan:         ch,

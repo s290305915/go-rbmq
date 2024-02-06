@@ -5,4 +5,5 @@ type ConsumerConfig struct {
 	QueueName    string
 	KeyName      string
 	ExchangeType EnumExchagne
+	MqConf       Conf
 }
