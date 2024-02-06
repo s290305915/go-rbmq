@@ -18,6 +18,7 @@ type (
 	}
 
 	Conf struct {
+		Name     string `json:"name" yaml:"name"`
 		Addr     string `json:"addr" yaml:"addr"`
 		Port     string `json:"port" yaml:"port"`
 		User     string `json:"user" yaml:"user"`
@@ -38,16 +39,15 @@ type DataWithCtx struct {
 }
 
 var (
-	ChannelPool *pool.ObjectPool // 连接池
-
-	activeConn *Connection // 当前操作链接
-	mutex      sync.Mutex  // 互斥锁
+	ChannelPool map[string]*pool.ObjectPool // 连接池
+	activeConn  map[string]*Connection      // 当前操作链接
+	mutex       sync.Mutex                  // 互斥锁
 )
 
 // Init 初始化
 func Init(c Conf) (err error) {
-	if c.Addr == "" {
-		return fmt.Errorf("RabbitMQ 连接地址为空！")
+	if c.Addr == "" || c.Name == "" {
+		return fmt.Errorf("RabbitMQ 连接地址为空或name为空！")
 	}
 
 	connStr := fmt.Sprintf("amqp://%s:%s@%s:%s/%s",
@@ -57,7 +57,16 @@ func Init(c Conf) (err error) {
 		c.Port,
 		c.Vhost)
 
-	activeConn, _ = Dial(connStr)
+	acConn, err := Dial(connStr)
+	if err != nil {
+		return err
+	}
+
+	if activeConn == nil {
+		activeConn = make(map[string]*Connection)
+	}
+
+	activeConn[c.Name] = acConn
 
 	maxSize := c.PoolIdle.MaxSize
 	if maxSize <= 0 || maxSize > 2000 {
@@ -72,7 +81,7 @@ func Init(c Conf) (err error) {
 		maxIdle = 2000
 	}
 
-	ChannelPool = pool.NewObjectPool(context.TODO(), &ChannelFactory{mqConfig: c, mqConnStr: connStr}, &pool.ObjectPoolConfig{
+	chPool := pool.NewObjectPool(context.TODO(), &ChannelFactory{mqConfig: c, mqConnStr: connStr}, &pool.ObjectPoolConfig{
 		LIFO:                     false,
 		MaxTotal:                 maxSize,
 		MinIdle:                  minIdle,
@@ -89,6 +98,11 @@ func Init(c Conf) (err error) {
 		TimeBetweenEvictionRuns:  0,
 		EvictionContext:          nil,
 	})
+
+	if ChannelPool == nil {
+		ChannelPool = make(map[string]*pool.ObjectPool)
+	}
+	ChannelPool[c.Name] = chPool
 
 	return nil
 }
@@ -189,21 +203,23 @@ func (ch *Channel) NewConsumer(ctx context.Context, queue string, handler func(c
 func (cf *ChannelFactory) MakeObject(ctx context.Context) (*pool.PooledObject, error) {
 	//fmt.Printf("make object\n")
 	//fmt.Printf("activeConn", activeConn)
-	if activeConn.IsClosed() {
+	thisAcConn := activeConn[cf.mqConfig.Name]
+	if thisAcConn.IsClosed() {
 		mutex.Lock()
 		var cErr error
-		activeConn, cErr = Dial(cf.mqConnStr)
+		thisAcConn, cErr = Dial(cf.mqConnStr)
 		if cErr != nil {
 			mutex.Unlock()
 			return nil, cErr
 		}
-		ChannelPool.Clear(ctx)
+		ChannelPool[cf.mqConfig.Name].Clear(ctx)
 		mutex.Unlock()
 	}
-	ch, err := activeConn.Channel()
+	ch, err := thisAcConn.Channel()
 	if err != nil {
 		return nil, err
 	}
+	activeConn[cf.mqConfig.Name] = thisAcConn
 	return pool.NewPooledObject(
 		ch,
 	), nil
@@ -220,7 +236,8 @@ func (cf *ChannelFactory) DestroyObject(ctx context.Context, object *pool.Pooled
 
 func (cf *ChannelFactory) ValidateObject(ctx context.Context, object *pool.PooledObject) bool {
 	//fmt.Printf("validate Object\n")
-	if activeConn.IsClosed() {
+	thisAcConn := activeConn[cf.mqConfig.Name]
+	if thisAcConn.IsClosed() {
 		return false
 	}
 	ch := object.Object.(*Channel)
@@ -232,8 +249,9 @@ func (cf *ChannelFactory) ValidateObject(ctx context.Context, object *pool.Poole
 
 func (cf *ChannelFactory) ActivateObject(ctx context.Context, object *pool.PooledObject) error {
 	//fmt.Printf("activate object\n")
+	thisAcConn := activeConn[cf.mqConfig.Name]
 	ch := object.Object.(*Channel)
-	if activeConn.IsClosed() || ch.IsClosed() {
+	if thisAcConn.IsClosed() || ch.IsClosed() {
 		return amqp.Error{}
 	}
 	return nil
