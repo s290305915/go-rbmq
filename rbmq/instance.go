@@ -15,7 +15,7 @@ func (c *ConsumerConfig) NewInstance() *RbmqInstance {
 
 	//fmt.Printf("ChannelPool：%+v", ChannelPool)
 
-	obj, err := ChannelPool.BorrowObject(context.TODO())
+	obj, err := ChannelPool[c.MqConf.Name].BorrowObject(context.TODO())
 	if err != nil {
 		return nil
 	}
@@ -63,7 +63,7 @@ func (c *ConsumerConfig) NewInstanceByConn(r *Rabbit) *RbmqInstance {
 		log.Fatalf("bind queue err: %v", err)
 	}
 
-	log.Printf("init mq success, exchange: %s, queue: %s, key: %s", c.ExchangeName, c.QueueName, c.KeyName)
+	log.Printf("init mq[%s@%s] success, exchange: %s, queue: %s, key: %s", c.MqConf.User, c.MqConf.Addr, c.ExchangeName, c.QueueName, c.KeyName)
 	return &RbmqInstance{
 		ConsumerConfig: c,
 		MqChan:         channel,

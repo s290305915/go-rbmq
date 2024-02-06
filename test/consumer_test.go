@@ -16,11 +16,25 @@ func TestConsumerSingle(t *testing.T) {
 	fmt.Println("启动测试进程")
 
 	mqConf := rbmq.Conf{
+		Name:  "rbmq1",
 		Addr:  "127.0.0.1",
 		Port:  "5672",
 		User:  "admin",
 		Pwd:   "123",
 		Vhost: "/",
+		PoolIdle: rbmq.Idle{
+			MaxSize: 100,
+			MinIdle: 1000,
+			MaxIdle: 2000,
+		},
+	}
+	mqConf2 := rbmq.Conf{
+		Name:  "rbmq2",
+		Addr:  "127.0.0.2",
+		Port:  "5672",
+		User:  "admin",
+		Pwd:   "123",
+		Vhost: "cxl_host",
 		PoolIdle: rbmq.Idle{
 			MaxSize: 100,
 			MinIdle: 1000,
@@ -33,6 +47,10 @@ func TestConsumerSingle(t *testing.T) {
 
 	orderProdc := LoadConsumer2(mqConf)
 	go orderProdc.Consume()
+
+	rbmq.Init(mqConf2)
+	orderProdc2 := LoadConsumer2(mqConf2)
+	go orderProdc2.Consume()
 
 	sigterm := make(chan os.Signal, 1)
 	signal.Notify(sigterm, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
