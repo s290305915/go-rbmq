@@ -99,6 +99,17 @@ func (c *OrderRbmqPorducer) Send(ctx context.Context, data []byte) error {
 	return nil
 }
 
+func (c *OrderRbmqPorducer) SendTx(ctx context.Context, data []byte) (*rbmq.Channel, error) {
+	log.Println("start publisher with transaction:", c.ExchangeName, c.KeyName, string(data))
+	ch, pErr := c.MqChan.PublishTx(ctx, c.ExchangeName, c.KeyName, data)
+	if pErr != nil {
+		log.Fatalf("publish msg err: %v", pErr)
+	}
+
+	time.Sleep(1 * time.Second)
+	return ch, nil
+}
+
 func (c *OrderRbmqPorducer) SendWithoutContext(data []byte) error {
 	log.Println("start publisher(no context):", c.ExchangeName, c.KeyName, string(data))
 	go func() {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -53,19 +54,43 @@ func TestProducerSingle(t *testing.T) {
 
 	go func() {
 		for {
+			r := rand.New(rand.NewSource(time.Now().UnixNano()))
+			randomNum := r.Intn(9)
+
+			isOk := randomNum%8 == 0
+			msg := fmt.Sprintf("雷猴_%d", randomNum)
+
 			// 发送消息带上下文
-			err := orderProdc.Send(ctx, []byte("雷猴"))
+			ch, err := orderProdc.SendTx(ctx, []byte(msg))
 			if err != nil {
 				log.Fatalf("publish msg err: %v", err)
 				return
 			}
 
-			// 发送消息不带上下文
-			err = orderProdc.SendWithoutContext([]byte(randomString(50)))
+			if isOk {
+				err = ch.CommitTx()
+				log.Printf(" -tx commit!")
+				if err != nil {
+					log.Fatalf("commit err: %v", err)
+					return
+				}
+
+				continue
+			}
+
+			err = ch.RollbackTx()
+			log.Printf(" -tx rollback!")
 			if err != nil {
-				log.Fatalf("publish msg err(no context): %v", err)
+				log.Fatalf("rollback err: %v", err)
 				return
 			}
+
+			// 发送消息不带上下文
+			//err = orderProdc.SendWithoutContext([]byte(randomString(50)))
+			//if err != nil {
+			//	log.Fatalf("publish msg err(no context): %v", err)
+			//	return
+			//}
 
 			time.Sleep(1 * time.Second)
 		}
