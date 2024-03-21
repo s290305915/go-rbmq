@@ -112,7 +112,7 @@ func (ch *Channel) ExchangeDeclare(name string, kind string) (err error) {
 	return ch.Channel.ExchangeDeclare(name, kind, true, false, false, false, nil)
 }
 
-// 发布消息. 带上下文传递
+// Publish 发布消息. 带上下文传递
 func (ch *Channel) Publish(ctx context.Context, exchange, key string, body []byte) (err error) {
 	body, err = AddContextToMessage(ctx, body)
 	if err != nil {
@@ -123,14 +123,14 @@ func (ch *Channel) Publish(ctx context.Context, exchange, key string, body []byt
 	return err
 }
 
-// Publish 发布消息. 不带上下文传递
+// PublishWithoutContext 发布消息. 不带上下文传递
 func (ch *Channel) PublishWithoutContext(ctx context.Context, exchange, key string, body []byte) (err error) {
 	_, err = ch.Channel.PublishWithDeferredConfirmWithContext(ctx, exchange, key, false, false,
 		amqp.Publishing{ContentType: "text/plain", Body: body})
 	return err
 }
 
-// 发布延迟消息. 带上下文传递
+// PublishDelay 发布延迟消息. 带上下文传递
 func (ch *Channel) PublishDelay(ctx context.Context, exchange, key string, body []byte, timer time.Duration) (err error) {
 	body, err = AddContextToMessage(ctx, body)
 	if err != nil {
@@ -141,7 +141,7 @@ func (ch *Channel) PublishDelay(ctx context.Context, exchange, key string, body 
 	return err
 }
 
-// 发布延迟消息. 不带上下文传递
+// PublishDelayWithoutContext 发布延迟消息. 不带上下文传递
 func (ch *Channel) PublishDelayWithoutContext(ctx context.Context, exchange, key string, body []byte, timer time.Duration) (err error) {
 	_, err = ch.Channel.PublishWithDeferredConfirmWithContext(ctx, exchange, key, false, false,
 		amqp.Publishing{ContentType: "text/plain", Body: body, Expiration: fmt.Sprintf("%d", timer.Milliseconds())})
@@ -198,6 +198,38 @@ func (ch *Channel) NewConsumer(ctx context.Context, queue string, handler func(c
 	}
 
 	return nil
+}
+
+// WithTx 开启事务
+func (ch *Channel) WithTx() (chTx *Channel, err error) {
+	err = ch.Channel.Tx()
+	return ch, err
+}
+
+// CommitTx 提交事务
+func (ch *Channel) CommitTx() (err error) {
+	return ch.TxCommit()
+}
+
+// RollbackTx 回滚事务
+func (ch *Channel) RollbackTx() (err error) {
+	return ch.TxRollback()
+}
+
+// PublishTx 发布事务消息
+func (ch *Channel) PublishTx(ctx context.Context, exchange, key string, body []byte) (chTx *Channel, err error) {
+	body, err = AddContextToMessage(ctx, body)
+	if err != nil {
+		return nil, err // 无法添加上下文，直接返回
+	}
+	err = ch.Channel.Tx()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = ch.Channel.PublishWithDeferredConfirmWithContext(ctx, exchange, key, false, false,
+		amqp.Publishing{ContentType: "text/plain", Body: body})
+	return ch, err
 }
 
 func (cf *ChannelFactory) MakeObject(ctx context.Context) (*pool.PooledObject, error) {
